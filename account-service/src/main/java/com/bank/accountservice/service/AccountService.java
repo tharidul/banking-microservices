@@ -68,6 +68,23 @@ public class AccountService {
         return mapToResponse(accountRepository.save(account));
     }
 
+    public AccountResponse deposit(String accountNumber, BigDecimal amount){
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(()-> new RuntimeException("Account Not Found"));
+        account.setBalance(account.getBalance().add(amount));
+        return mapToResponse(accountRepository.save(account));
+    }
+
+    public AccountResponse withdraw(String accountNumber, BigDecimal amount){
+        Account account = accountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(()-> new RuntimeException("Account Not Found"));
+
+        if(account.getBalance().compareTo(amount) < 0){
+            throw new RuntimeException("Insufficient Balance");
+        }
+        account.setBalance(account.getBalance().subtract(amount));
+        return mapToResponse(accountRepository.save(account));
+    }
 
 
     private String generateUniqeAccountNumber(){

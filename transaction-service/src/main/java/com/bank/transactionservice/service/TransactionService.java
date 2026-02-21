@@ -1,5 +1,6 @@
 package com.bank.transactionservice.service;
 
+import com.bank.transactionservice.client.AccountClient;
 import com.bank.transactionservice.dto.request.TransactionRequest;
 import com.bank.transactionservice.dto.response.TransactionResponse;
 import com.bank.transactionservice.entity.Transaction;
@@ -23,8 +24,11 @@ public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final TransactionProducer transactionProducer;
+    private final AccountClient accountClient;
 
     public TransactionResponse deposit(TransactionRequest request){
+
+        accountClient.deposit(request.getToAccountNumber(), request.getAmount());
 
         Transaction transaction = Transaction.builder()
                 .transactionReference(generateTransactionReference())
@@ -46,6 +50,8 @@ public class TransactionService {
 
     public TransactionResponse withdraw(TransactionRequest request){
 
+        accountClient.withdraw(request.getFromAccountNumber(), request.getAmount());
+
         Transaction transaction = Transaction.builder()
                 .transactionReference(generateTransactionReference())
                 .transactionType(TransactionType.WITHDRAWAL)
@@ -62,6 +68,9 @@ public class TransactionService {
     }
 
     public TransactionResponse transfer(TransactionRequest request){
+
+        accountClient.withdraw(request.getFromAccountNumber(), request.getAmount());
+        accountClient.deposit(request.getToAccountNumber(), request.getAmount());
 
         Transaction transaction = Transaction.builder()
                 .transactionReference(generateTransactionReference())

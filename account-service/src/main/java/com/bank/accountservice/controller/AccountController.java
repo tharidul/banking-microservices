@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @RestController
@@ -74,6 +75,32 @@ public class AccountController {
                         .data(account)
                         .message("Account closed successfully")
                         .build());
+    }
+
+    @PutMapping("/{accountNumber}/deposit")
+    public ResponseEntity<ApiResponse<AccountResponse>> deposit(@PathVariable String accountNumber,@RequestParam BigDecimal amount){
+
+        AccountResponse response = accountService.deposit(accountNumber,amount);
+        return ResponseEntity.ok(
+                ApiResponse.<AccountResponse>builder()
+                        .success(true)
+                        .data(response)
+                        .message("Balance updated successfully")
+                        .build()
+        );
+    }
+
+    @PutMapping("/{accountNumber}/withdraw")
+    public ResponseEntity<ApiResponse<AccountResponse>> withdraw(
+            @PathVariable String accountNumber,@RequestParam BigDecimal amount){
+        AccountResponse response = accountService.withdraw(accountNumber,amount);
+        return ResponseEntity.ok(
+                ApiResponse.<AccountResponse>builder()
+                        .success(true)
+                        .data(response)
+                        .message("Balance updated successfully")
+                        .build()
+        );
     }
 
 
