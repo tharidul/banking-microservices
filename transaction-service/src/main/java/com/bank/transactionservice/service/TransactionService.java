@@ -9,6 +9,7 @@ import com.bank.transactionservice.entity.TransactionType;
 import com.bank.transactionservice.kafka.event.TransactionEvent;
 import com.bank.transactionservice.kafka.producer.TransactionProducer;
 import com.bank.transactionservice.repository.TransactionRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,12 +21,14 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
     private final TransactionProducer transactionProducer;
     private final AccountClient accountClient;
 
+    @CircuitBreaker(name = "account-service", fallbackMethod = "depositFallback")
     public TransactionResponse deposit(TransactionRequest request){
 
         accountClient.deposit(request.getToAccountNumber(), request.getAmount());
@@ -48,6 +51,7 @@ public class TransactionService {
 
     }
 
+    @CircuitBreaker(name = "account-service", fallbackMethod = "withdrawFallback")
     public TransactionResponse withdraw(TransactionRequest request){
 
         accountClient.withdraw(request.getFromAccountNumber(), request.getAmount());
@@ -67,6 +71,7 @@ public class TransactionService {
         return mapToResponse(savedTransaction);
     }
 
+    @CircuitBreaker(name = "account-service", fallbackMethod = "transferFallback")
     public TransactionResponse transfer(TransactionRequest request){
 
         accountClient.withdraw(request.getFromAccountNumber(), request.getAmount());
@@ -132,6 +137,21 @@ public class TransactionService {
                 .description(transaction.getDescription())
                 .createdAt(transaction.getCreatedAt())
                 .build();
+    }
+
+    public TransactionResponse depositFallback(TransactionRequest request, Exception e) {
+        log.error("Circuit breaker triggered for deposit: {}", e.getMessage());
+        throw new RuntimeException("Account service is currently unavailable. Please try again later.");
+    }
+
+    public TransactionResponse withdrawFallback(TransactionRequest request, Exception e) {
+        log.error("Circuit breaker triggered for withdraw: {}", e.getMessage());
+        throw new RuntimeException("Account service is currently unavailable. Please try again later.");
+    }
+
+    public TransactionResponse transferFallback(TransactionRequest request, Exception e) {
+        log.error("Circuit breaker triggered for transfer: {}", e.getMessage());
+        throw new RuntimeException("Account service is currently unavailable. Please try again later.");
     }
 
 }

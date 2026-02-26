@@ -8,6 +8,7 @@ import com.bank.loanservice.dto.response.LoanResponse;
 import com.bank.loanservice.entity.Loan;
 import com.bank.loanservice.enums.LoanStatus;
 import com.bank.loanservice.repository.LoanRepository;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class LoanService {
     private final LoanRepository loanRepository;
     private final AccountClient accountClient;
 
+    @CircuitBreaker(name = "account-service", fallbackMethod = "applyForLoanFallback")
     public ApiResponse<LoanResponse> applyForLoan(LoanRequest request) {
         // Verify account exists via Feign
         ApiResponse<AccountResponse> accountResponse = accountClient.getAccount(request.getAccountNumber());
@@ -78,5 +80,10 @@ public class LoanService {
                 .status(loan.getStatus())
                 .createdAt(loan.getCreatedAt())
                 .build();
+    }
+
+    public ApiResponse<LoanResponse> applyForLoanFallback(LoanRequest request, Exception e) {
+        log.error("Circuit breaker triggered for loan application: {}", e.getMessage());
+        throw new RuntimeException("Account service is currently unavailable. Please try again later.");
     }
 }
