@@ -33,6 +33,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.disable())          // ← add this
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/actuator/**").permitAll()
                         .requestMatchers("/error").permitAll()    // ← add this
                         .anyRequest().authenticated()
                 )
